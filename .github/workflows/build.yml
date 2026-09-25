@@ -27,11 +27,14 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
-    - name: Setup Gradle Wrapper
+    - name: Download and setup Gradle 7.6.4
       run: |
         cd android
-        gradle wrapper --gradle-version 7.6.4
+        wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
+        unzip -q gradle-7.6.4-bin.zip
+        gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
         chmod +x gradlew
+        rm -rf gradle-7.6.4 gradle-7.6.4-bin.zip
 
     - name: Create keystore
       run: |
