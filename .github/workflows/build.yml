@@ -3,8 +3,6 @@ name: Build APK
 on:
   push:
     branches: [ main, master ]
-  pull_request:
-    branches: [ main, master ]
   workflow_dispatch:
 
 jobs:
@@ -27,16 +25,18 @@ jobs:
         node-version: '18'
 
     - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Setup Gradle Wrapper
       run: |
-        npm install --legacy-peer-deps
+        cd android
+        gradle wrapper --gradle-version 7.6.4
+        chmod +x gradlew
 
     - name: Create keystore
       run: |
         cd android/app
         keytool -genkeypair -v -keystore release.keystore -alias sage-key -keyalg RSA -keysize 2048 -validity 10000 -storepass sage2024 -keypass sage2024 -dname "CN=Sage Predictor, OU=Dev, O=Sage, L=City, S=State, C=US"
-
-    - name: Grant execute permission for gradlew
-      run: chmod +x android/gradlew
 
     - name: Build Release APK
       run: |
