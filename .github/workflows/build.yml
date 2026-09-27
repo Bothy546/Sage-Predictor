@@ -184,10 +184,21 @@ jobs:
         </manifest>
         EOF
 
-    - name: Setup Gradle
+    - name: Download and Setup Gradle 7.6.4
       run: |
         cd android
-        gradle wrapper --gradle-version 7.6.4
+        
+        # Download specific Gradle version
+        wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
+        unzip -q gradle-7.6.4-bin.zip
+        
+        # Use it to create wrapper
+        ./gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
+        
+        # Clean up
+        rm -rf gradle-7.6.4 gradle-7.6.4-bin.zip
+        
+        # Make executable
         chmod +x gradlew
 
     - name: Create keystore
