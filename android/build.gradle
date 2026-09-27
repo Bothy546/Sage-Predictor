@@ -4,28 +4,35 @@ buildscript {
         minSdkVersion = 21
         compileSdkVersion = 33
         targetSdkVersion = 33
-        kotlinVersion = "1.8.0"
     }
     repositories {
         google()
         mavenCentral()
     }
     dependencies {
-        classpath("com.android.tools.build:gradle:7.4.2")
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion")
+        classpath('com.android.tools.build:gradle:7.4.2')
     }
 }
 
 allprojects {
     repositories {
-        maven {
-            url("$rootDir/../node_modules/react-native/android")
-        }
-        maven {
-            url("$rootDir/../node_modules/jsc-android/dist")
-        }
         google()
         mavenCentral()
+        
+        // React Native repository
+        maven {
+            url "$rootDir/../node_modules/react-native/android"
+        }
+        
+        // JSC repository
+        maven {
+            url "$rootDir/../node_modules/jsc-android/dist"
+        }
+        
+        // Fallback to jcenter
+        maven {
+            url "https://www.jitpack.io"
+        }
     }
 
 }
