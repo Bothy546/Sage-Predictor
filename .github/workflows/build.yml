@@ -22,26 +22,42 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-node: '18'
+        node-version: '18'
 
     - name: Install dependencies
+      run: npm install --legacy-peer-deps
+
+    - name: Create Gradle wrapper files manually
       run: |
-        npm install --legacy-peer-deps
-        npm install -g react-native-cli
+        cd android
+        mkdir -p gradle/wrapper
+        
+        # Download gradle-wrapper.jar
+        wget -q https://raw.githubusercontent.com/gradle/gradle/v7.6.4/gradle/wrapper/gradle-wrapper.jar -O gradle/wrapper/gradle-wrapper.jar
+        
+        # Create gradle-wrapper.properties
+        cat > gradle/wrapper/gradle-wrapper.properties << EOF
+        distributionBase=GRADLE_USER_HOME
+        distributionPath=wrapper/dists
+        distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.4-all.zip
+        zipStoreBase=GRADLE_USER_HOME
+        zipStorePath=wrapper/dists
+        EOF
+        
+        # Create gradlew script
+        cat > gradlew << 'EOF'
+        #!/bin/sh
+        APP_HOME=$( cd "${APP_HOME:-./}" && pwd -P ) || exit
+        CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
+        exec "$JAVA_HOME/bin/java" "-Dorg.gradle.appname=gradlew" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
+        EOF
+        
+        chmod +x gradlew
 
     - name: Create local.properties
       run: |
         cd android
         echo "sdk.dir=$ANDROID_HOME" > local.properties
-
-    - name: Download and setup Gradle 7.6.4
-      run: |
-        cd android
-        wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
-        unzip -q gradle-7.6.4-bin.zip
-        gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
-        chmod +x gradlew
-        rm -rf gradle-7.6.4 gradle-7.6.4-bin.zip
 
     - name: Accept Android licenses
       run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -54,7 +70,6 @@ jobs:
     - name: Build Release APK
       run: |
         cd android
-        ./gradlew clean
         ./gradlew assembleRelease --no-daemon --stacktrace
 
     - name: Upload APK
