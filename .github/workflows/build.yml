@@ -22,10 +22,12 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-node: '18'
 
     - name: Install dependencies
-      run: npm install --legacy-peer-deps
+      run: |
+        npm install --legacy-peer-deps
+        npm install -g react-native-cli
 
     - name: Create local.properties
       run: |
@@ -52,6 +54,7 @@ jobs:
     - name: Build Release APK
       run: |
         cd android
+        ./gradlew clean
         ./gradlew assembleRelease --no-daemon --stacktrace
 
     - name: Upload APK
