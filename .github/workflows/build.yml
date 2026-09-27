@@ -184,36 +184,10 @@ jobs:
         </manifest>
         EOF
 
-    - name: Setup Gradle Wrapper (FIXED)
+    - name: Setup Gradle
       run: |
         cd android
-        mkdir -p gradle/wrapper
-        
-        # Download gradle wrapper jar
-        wget -q https://raw.githubusercontent.com/gradle/gradle/v7.6.4/gradle/wrapper/gradle-wrapper.jar -O gradle/wrapper/gradle-wrapper.jar
-        
-        # Create properties file
-        cat > gradle/wrapper/gradle-wrapper.properties << 'EOF'
-        distributionBase=GRADLE_USER_HOME
-        distributionPath=wrapper/dists
-        distributionUrl=https\://services.gradle.org/distributions/gradle-7.6.4-all.zip
-        zipStoreBase=GRADLE_USER_HOME
-        zipStorePath=wrapper/dists
-        EOF
-        
-        # Create CORRECT gradlew script
-        cat > gradlew << 'GRADLEW'
-        #!/bin/sh
-        
-        APP_HOME="$( cd "${APP_HOME:-./}" && pwd -P )" || exit
-        
-        DEFAULT_JVM_OPTS='"-Xmx64m" "-Xms64m"'
-        
-        CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-        
-        exec "$JAVA_HOME/bin/java" $DEFAULT_JVM_OPTS $JAVA_OPTS "-Dorg.gradle.appname=gradlew" -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"
-        GRADLEW
-        
+        gradle wrapper --gradle-version 7.6.4
         chmod +x gradlew
 
     - name: Create keystore
@@ -225,7 +199,7 @@ jobs:
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
-        ./gradlew assembleRelease --no-daemon
+        ./gradlew assembleRelease --no-daemon --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
