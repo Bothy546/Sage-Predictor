@@ -24,8 +24,16 @@ jobs:
       with:
         node-version: '18'
 
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+
     - name: Install dependencies
       run: npm install --legacy-peer-deps
+
+    - name: Create local.properties
+      run: |
+        cd android
+        echo "sdk.dir=$ANDROID_HOME" > local.properties
 
     - name: Download and setup Gradle 7.6.4
       run: |
