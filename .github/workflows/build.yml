@@ -27,6 +27,25 @@ jobs:
     - name: Install dependencies (with dev dependencies)
       run: npm install
 
+    - name: Create Metro config
+      run: |
+        cat > metro.config.js << 'EOF'
+        const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+        
+        const config = {
+          transformer: {
+            getTransformOptions: async () => ({
+              transform: {
+                experimentalImportSupport: false,
+                inlineRequires: true,
+              },
+            }),
+          },
+        };
+        
+        module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+        EOF
+
     - name: Create Android build files
       run: |
         cat > android/build.gradle << 'EOF'
