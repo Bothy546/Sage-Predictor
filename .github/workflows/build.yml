@@ -27,6 +27,16 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
+    - name: Create Metro config
+      run: |
+        cat > metro.config.js << 'EOF'
+        const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
+        
+        const config = {};
+        
+        module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+        EOF
+
     - name: Create Android build files
       run: |
         cat > android/build.gradle << 'EOF'
@@ -186,10 +196,8 @@ jobs:
 
     - name: Bundle JavaScript
       run: |
-        # Create assets directory
         mkdir -p android/app/src/main/assets
         
-        # Bundle the JavaScript code
         npx react-native bundle \
           --platform android \
           --dev false \
