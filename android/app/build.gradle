@@ -12,6 +12,9 @@ android {
         targetSdkVersion 33
         versionCode 1
         versionName "1.0"
+        
+        buildConfigField "boolean", "IS_NEW_ARCHITECTURE_ENABLED", "false"
+        buildConfigField "boolean", "IS_HERMES_ENABLED", "false"
     }
 
     signingConfigs {
@@ -37,6 +40,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_11
         targetCompatibility JavaVersion.VERSION_11
     }
+    
+    buildFeatures {
+        buildConfig true
+    }
 }
 
 dependencies {
@@ -44,8 +51,9 @@ dependencies {
     implementation 'com.facebook.react:react-android:0.72.6'
     implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
     implementation 'androidx.appcompat:appcompat:1.5.1'
+    implementation 'com.facebook.soloader:soloader:0.10.5'
     
-    // Use JSC instead of Hermes to avoid issues
+    // Use JSC instead of Hermes
     implementation 'org.webkit:android-jsc:+'
 
 }
