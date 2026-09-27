@@ -24,7 +24,7 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install dependencies (with dev dependencies)
+    - name: Install dependencies
       run: npm install
 
     - name: Create Metro config
@@ -203,11 +203,10 @@ jobs:
         </manifest>
         EOF
 
-    - name: Bundle JavaScript with Metro
+    - name: Bundle JavaScript
       run: |
         mkdir -p android/app/src/main/assets
         
-        echo "Bundling JavaScript..."
         npx react-native bundle \
           --platform android \
           --dev false \
@@ -215,27 +214,18 @@ jobs:
           --bundle-output android/app/src/main/assets/index.android.bundle \
           --assets-dest android/app/src/main/res/ \
           --reset-cache
-        
-        echo "Bundle created successfully!"
-        ls -lh android/app/src/main/assets/
 
-    - name: Download and Setup Gradle 7.6.4
+    - name: Setup Gradle 7.6.4
       run: |
-        cd android
-        
-        # Download Gradle
+        # Download to /tmp to avoid conflicts
+        cd /tmp
         wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
         unzip -q gradle-7.6.4-bin.zip
         
-        # Generate wrapper in current directory
-        ./gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
-        
-        # Make executable
+        # Generate wrapper in project using /tmp gradle
+        cd $GITHUB_WORKSPACE/android
+        /tmp/gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
         chmod +x gradlew
-        
-        # Clean up downloaded files
-        rm -f gradle-7.6.4-bin.zip
-        rm -rf gradle-7.6.4
 
     - name: Create keystore
       run: |
@@ -246,11 +236,7 @@ jobs:
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
-        ./gradlew clean
         ./gradlew assembleRelease --no-daemon --stacktrace
-        
-        echo "APK built successfully!"
-        ls -lh app/build/outputs/apk/release/
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
