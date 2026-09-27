@@ -27,48 +27,110 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
+    - name: Create Java source files
+      run: |
+        mkdir -p android/app/src/main/java/com/sagepredictor
+        
+        # Create MainActivity.java
+        cat > android/app/src/main/java/com/sagepredictor/MainActivity.java << 'EOF'
+        package com.sagepredictor;
+        
+        import com.facebook.react.ReactActivity;
+        
+        public class MainActivity extends ReactActivity {
+          @Override
+          protected String getMainComponentName() {
+            return "SagePredictor";
+          }
+        }
+        EOF
+        
+        # Create MainApplication.java
+        cat > android/app/src/main/java/com/sagepredictor/MainApplication.java << 'EOF'
+        package com.sagepredictor;
+        
+        import android.app.Application;
+        import com.facebook.react.PackageList;
+        import com.facebook.react.ReactApplication;
+        import com.facebook.react.ReactNativeHost;
+        import com.facebook.react.ReactPackage;
+        import com.facebook.soloader.SoLoader;
+        import java.util.List;
+        
+        public class MainApplication extends Application implements ReactApplication {
+        
+          private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
+            @Override
+            public boolean getUseDeveloperSupport() {
+              return false;
+            }
+        
+            @Override
+            protected List<ReactPackage> getPackages() {
+              List<ReactPackage> packages = new PackageList(this).getPackages();
+              return packages;
+            }
+        
+            @Override
+            protected String getJSMainModuleName() {
+              return "index";
+            }
+          };
+        
+          @Override
+          public ReactNativeHost getReactNativeHost() {
+            return mReactNativeHost;
+          }
+        
+          @Override
+          public void onCreate() {
+            super.onCreate();
+            SoLoader.init(this, false);
+          }
+        }
+        EOF
+
     - name: Create app icons
       run: |
-        # Create mipmap directories
         mkdir -p android/app/src/main/res/mipmap-hdpi
         mkdir -p android/app/src/main/res/mipmap-mdpi
         mkdir -p android/app/src/main/res/mipmap-xhdpi
         mkdir -p android/app/src/main/res/mipmap-xxhdpi
         mkdir -p android/app/src/main/res/mipmap-xxxhdpi
         
-        # Install ImageMagick to create icons
         sudo apt-get update
         sudo apt-get install -y imagemagick
         
-        # Create a simple green icon with "S" letter (Sage Predictor)
-        convert -size 512x512 xc:#4CAF50 -pointsize 400 -fill white -gravity center -annotate +0+0 "S" android/app/src/main/res/ic_launcher_base.png
+        convert -size 512x512 xc:#4CAF50 -pointsize 400 -fill white -gravity center -annotate +0+0 "S" /tmp/ic_launcher_base.png
         
-        # Resize for different densities
-        convert android/app/src/main/res/ic_launcher_base.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-        convert android/app/src/main/res/ic_launcher_base.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
-        convert android/app/src/main/res/ic_launcher_base.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
-        convert android/app/src/main/res/ic_launcher_base.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
-        convert android/app/src/main/res/ic_launcher_base.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+        convert /tmp/ic_launcher_base.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+        convert /tmp/ic_launcher_base.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+        convert /tmp/ic_launcher_base.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+        convert /tmp/ic_launcher_base.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+        convert /tmp/ic_launcher_base.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
         
-        # Create round icons (same as regular for simplicity)
         cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
         cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
         cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
         cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
         cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
-        
-        # Clean up
-        rm android/app/src/main/res/ic_launcher_base.png
+
+    - name: Create strings.xml
+      run: |
+        mkdir -p android/app/src/main/res/values
+        cat > android/app/src/main/res/values/strings.xml << 'EOF'
+        <resources>
+            <string name="app_name">Sage Predictor</string>
+        </resources>
+        EOF
 
     - name: Create Gradle wrapper files
       run: |
         cd android
         mkdir -p gradle/wrapper
         
-        # Download gradle-wrapper.jar
         wget -q https://raw.githubusercontent.com/gradle/gradle/v7.6.4/gradle/wrapper/gradle-wrapper.jar -O gradle/wrapper/gradle-wrapper.jar
         
-        # Create gradle-wrapper.properties
         cat > gradle/wrapper/gradle-wrapper.properties << EOF
         distributionBase=GRADLE_USER_HOME
         distributionPath=wrapper/dists
@@ -77,7 +139,6 @@ jobs:
         zipStorePath=wrapper/dists
         EOF
         
-        # Create gradlew script
         cat > gradlew << 'EOF'
         #!/bin/sh
         APP_HOME=$( cd "${APP_HOME:-./}" && pwd -P ) || exit
@@ -88,9 +149,7 @@ jobs:
         chmod +x gradlew
 
     - name: Create local.properties
-      run: |
-        cd android
-        echo "sdk.dir=$ANDROID_HOME" > local.properties
+      run: echo "sdk.dir=$ANDROID_HOME" > android/local.properties
 
     - name: Accept Android licenses
       run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -103,6 +162,7 @@ jobs:
     - name: Build Release APK
       run: |
         cd android
+        ./gradlew clean
         ./gradlew assembleRelease --no-daemon --stacktrace
 
     - name: Upload APK
