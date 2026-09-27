@@ -1,6 +1,3 @@
 rootProject.name = 'SagePredictor'
 
 include ':app'
-
-
-apply from: new File(["node", "--print", "require.resolve('@react-native/gradle-plugin/package.json')"].execute(null, rootDir).text.trim(), "../settings.gradle");
