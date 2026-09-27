@@ -184,21 +184,30 @@ jobs:
         </manifest>
         EOF
 
+    - name: Bundle JavaScript
+      run: |
+        # Create assets directory
+        mkdir -p android/app/src/main/assets
+        
+        # Bundle the JavaScript code
+        npx react-native bundle \
+          --platform android \
+          --dev false \
+          --entry-file index.js \
+          --bundle-output android/app/src/main/assets/index.android.bundle \
+          --assets-dest android/app/src/main/res
+
     - name: Download and Setup Gradle 7.6.4
       run: |
         cd android
         
-        # Download specific Gradle version
         wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
         unzip -q gradle-7.6.4-bin.zip
         
-        # Use it to create wrapper
         ./gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
         
-        # Clean up
         rm -rf gradle-7.6.4 gradle-7.6.4-bin.zip
         
-        # Make executable
         chmod +x gradlew
 
     - name: Create keystore
