@@ -27,6 +27,54 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
+    - name: Create Android build files
+      run: |
+        # Create build.gradle (project level)
+        cat > android/build.gradle << 'EOF'
+        buildscript {
+            ext {
+                buildToolsVersion = "33.0.0"
+                minSdkVersion = 21
+                compileSdkVersion = 33
+                targetSdkVersion = 33
+            }
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath('com.android.tools.build:gradle:7.4.2')
+            }
+        }
+        
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+                maven {
+                    url "$rootDir/../node_modules/react-native/android"
+                }
+                maven {
+                    url "$rootDir/../node_modules/jsc-android/dist"
+                }
+            }
+        }
+        EOF
+        
+        # Create settings.gradle
+        cat > android/settings.gradle << 'EOF'
+        rootProject.name = 'SagePredictor'
+        include ':app'
+        EOF
+        
+        # Create gradle.properties
+        cat > android/gradle.properties << 'EOF'
+        org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=512m
+        android.useAndroidX=true
+        android.enableJetifier=true
+        hermesEnabled=false
+        EOF
+
     - name: Create Java source files
       run: |
         mkdir -p android/app/src/main/java/com/sagepredictor
@@ -122,6 +170,38 @@ jobs:
         <resources>
             <string name="app_name">Sage Predictor</string>
         </resources>
+        EOF
+
+    - name: Create AndroidManifest.xml
+      run: |
+        cat > android/app/src/main/AndroidManifest.xml << 'EOF'
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+            package="com.sagepredictor">
+        
+            <uses-permission android:name="android.permission.INTERNET" />
+        
+            <application
+              android:name=".MainApplication"
+              android:label="@string/app_name"
+              android:icon="@mipmap/ic_launcher"
+              android:roundIcon="@mipmap/ic_launcher_round"
+              android:allowBackup="false"
+              android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar"
+              android:usesCleartextTraffic="true">
+              <activity
+                android:name=".MainActivity"
+                android:label="@string/app_name"
+                android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize|smallestScreenSize|uiMode"
+                android:launchMode="singleTask"
+                android:windowSoftInputMode="adjustResize"
+                android:exported="true">
+                <intent-filter>
+                    <action android:name="android.intent.action.MAIN" />
+                    <category android:name="android.intent.category.LAUNCHER" />
+                </intent-filter>
+              </activity>
+            </application>
+        </manifest>
         EOF
 
     - name: Create Gradle wrapper files
