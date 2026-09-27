@@ -27,7 +27,40 @@ jobs:
     - name: Install dependencies
       run: npm install --legacy-peer-deps
 
-    - name: Create Gradle wrapper files manually
+    - name: Create app icons
+      run: |
+        # Create mipmap directories
+        mkdir -p android/app/src/main/res/mipmap-hdpi
+        mkdir -p android/app/src/main/res/mipmap-mdpi
+        mkdir -p android/app/src/main/res/mipmap-xhdpi
+        mkdir -p android/app/src/main/res/mipmap-xxhdpi
+        mkdir -p android/app/src/main/res/mipmap-xxxhdpi
+        
+        # Install ImageMagick to create icons
+        sudo apt-get update
+        sudo apt-get install -y imagemagick
+        
+        # Create a simple green icon with "S" letter (Sage Predictor)
+        convert -size 512x512 xc:#4CAF50 -pointsize 400 -fill white -gravity center -annotate +0+0 "S" android/app/src/main/res/ic_launcher_base.png
+        
+        # Resize for different densities
+        convert android/app/src/main/res/ic_launcher_base.png -resize 48x48 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+        convert android/app/src/main/res/ic_launcher_base.png -resize 72x72 android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+        convert android/app/src/main/res/ic_launcher_base.png -resize 96x96 android/app/src/main/res/mipmap-xhdpi/ic_launcher.png
+        convert android/app/src/main/res/ic_launcher_base.png -resize 144x144 android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png
+        convert android/app/src/main/res/ic_launcher_base.png -resize 192x192 android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+        
+        # Create round icons (same as regular for simplicity)
+        cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+        cp android/app/src/main/res/mipmap-hdpi/ic_launcher.png android/app/src/main/res/mipmap-hdpi/ic_launcher_round.png
+        cp android/app/src/main/res/mipmap-xhdpi/ic_launcher.png android/app/src/main/res/mipmap-xhdpi/ic_launcher_round.png
+        cp android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxhdpi/ic_launcher_round.png
+        cp android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png
+        
+        # Clean up
+        rm android/app/src/main/res/ic_launcher_base.png
+
+    - name: Create Gradle wrapper files
       run: |
         cd android
         mkdir -p gradle/wrapper
