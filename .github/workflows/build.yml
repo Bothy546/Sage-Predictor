@@ -223,14 +223,19 @@ jobs:
       run: |
         cd android
         
+        # Download Gradle
         wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
         unzip -q gradle-7.6.4-bin.zip
         
+        # Generate wrapper in current directory
         ./gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
         
-        rm -rf gradle-7.6.4 gradle-7.6.4-bin.zip
-        
+        # Make executable
         chmod +x gradlew
+        
+        # Clean up downloaded files
+        rm -f gradle-7.6.4-bin.zip
+        rm -rf gradle-7.6.4
 
     - name: Create keystore
       run: |
