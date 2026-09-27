@@ -24,23 +24,8 @@ jobs:
       with:
         node-version: '18'
 
-    - name: Install dependencies
-      run: npm install --legacy-peer-deps
-
-    - name: Create Metro config
-      run: |
-        cat > metro.config.js << 'EOF'
-        module.exports = {
-          transformer: {
-            getTransformOptions: async () => ({
-              transform: {
-                experimentalImportSupport: false,
-                inlineRequires: true,
-              },
-            }),
-          },
-        };
-        EOF
+    - name: Install dependencies (with dev dependencies)
+      run: npm install
 
     - name: Create Android build files
       run: |
@@ -199,16 +184,21 @@ jobs:
         </manifest>
         EOF
 
-    - name: Bundle JavaScript
+    - name: Bundle JavaScript with Metro
       run: |
         mkdir -p android/app/src/main/assets
         
+        echo "Bundling JavaScript..."
         npx react-native bundle \
           --platform android \
           --dev false \
           --entry-file index.js \
           --bundle-output android/app/src/main/assets/index.android.bundle \
-          --assets-dest android/app/src/main/res
+          --assets-dest android/app/src/main/res/ \
+          --reset-cache
+        
+        echo "Bundle created successfully!"
+        ls -lh android/app/src/main/assets/
 
     - name: Download and Setup Gradle 7.6.4
       run: |
@@ -232,7 +222,11 @@ jobs:
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
+        ./gradlew clean
         ./gradlew assembleRelease --no-daemon --stacktrace
+        
+        echo "APK built successfully!"
+        ls -lh app/build/outputs/apk/release/
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
