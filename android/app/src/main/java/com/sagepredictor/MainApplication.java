@@ -21,7 +21,6 @@ public class MainApplication extends Application implements ReactApplication {
 
         @Override
         protected List<ReactPackage> getPackages() {
-          @SuppressWarnings("UnnecessaryLocalVariable")
           List<ReactPackage> packages = new PackageList(this).getPackages();
           return packages;
         }
@@ -50,7 +49,7 @@ public class MainApplication extends Application implements ReactApplication {
   @Override
   public void onCreate() {
     super.onCreate();
-    SoLoader.init(this, /* native exopackage */ false);
+    SoLoader.init(this, false);
     if (BuildConfig.IS_NEW_ARCHITECTURE_ENABLED) {
       DefaultNewArchitectureEntryPoint.load();
     }
