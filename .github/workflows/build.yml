@@ -1,4 +1,4 @@
-name: Android 14 Compatible APK
+name: Full Featured Android 14 APK
 
 on:
   push:
@@ -27,66 +27,13 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Create simple App for Android 14
+    - name: Verify your source files exist
       run: |
-        cat > src/App.js << 'EOF'
-        import React from 'react';
-        import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-        
-        const App = () => {
-          return (
-            <SafeAreaView style={styles.container}>
-              <View style={styles.content}>
-                <Text style={styles.title}>🧙 Sage Predictor</Text>
-                <Text style={styles.subtitle}>Android 14 Compatible</Text>
-                <View style={styles.card}>
-                  <Text style={styles.cardText}>✅ App is running!</Text>
-                  <Text style={styles.cardText}>✅ Android 14 Samsung</Text>
-                  <Text style={styles.cardText}>✅ All permissions OK</Text>
-                </View>
-              </View>
-            </SafeAreaView>
-          );
-        };
-        
-        const styles = StyleSheet.create({
-          container: {
-            flex: 1,
-            backgroundColor: '#0a0a0a',
-          },
-          content: {
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            padding: 20,
-          },
-          title: {
-            fontSize: 36,
-            fontWeight: 'bold',
-            color: '#4CAF50',
-            marginBottom: 10,
-          },
-          subtitle: {
-            fontSize: 16,
-            color: '#888',
-            marginBottom: 40,
-          },
-          card: {
-            backgroundColor: '#1a1a1a',
-            padding: 30,
-            borderRadius: 15,
-            borderLeftWidth: 5,
-            borderLeftColor: '#4CAF50',
-          },
-          cardText: {
-            fontSize: 18,
-            color: '#fff',
-            marginBottom: 12,
-          },
-        });
-        
-        export default App;
-        EOF
+        echo "=== CHECKING YOUR FILES ==="
+        ls -la src/
+        echo "App.js exists: $(test -f src/App.js && echo YES || echo NO)"
+        echo "predictions.js exists: $(test -f src/predictions.js && echo YES || echo NO)"
+        echo "teamData.js exists: $(test -f src/teamData.js && echo YES || echo NO)"
 
     - name: Create Metro config
       run: |
@@ -104,7 +51,6 @@ jobs:
                 minSdkVersion = 24
                 compileSdkVersion = 34
                 targetSdkVersion = 34
-                ndkVersion = "25.1.8937393"
             }
             repositories {
                 google()
@@ -139,7 +85,7 @@ jobs:
         android.nonFinalResIds=false
         EOF
 
-    - name: Create app/build.gradle for Android 14
+    - name: Create app/build.gradle
       run: |
         cat > android/app/build.gradle << 'EOF'
         apply plugin: "com.android.application"
@@ -250,7 +196,7 @@ jobs:
         }
         EOF
 
-    - name: Create Android 14 compatible manifest
+    - name: Create Android manifest
       run: |
         mkdir -p android/app/src/main/res/values
         echo '<resources><string name="app_name">Sage Predictor</string></resources>' > android/app/src/main/res/values/strings.xml
@@ -304,10 +250,21 @@ jobs:
         cd android/app
         keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-    - name: Bundle
+    - name: Bundle JavaScript with YOUR full app
       run: |
         mkdir -p android/app/src/main/assets
-        npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/
+        
+        echo "=== BUNDLING YOUR FULL APP (predictions, API, everything) ==="
+        npx react-native bundle \
+          --platform android \
+          --dev false \
+          --entry-file index.js \
+          --bundle-output android/app/src/main/assets/index.android.bundle \
+          --assets-dest android/app/src/main/res/
+        
+        echo "=== BUNDLE SIZE ==="
+        ls -lh android/app/src/main/assets/index.android.bundle
+        du -h android/app/src/main/assets/index.android.bundle
 
     - name: Setup Gradle 8.0
       run: |
@@ -318,15 +275,15 @@ jobs:
         /tmp/gradle-8.0/bin/gradle wrapper --gradle-version=8.0
         chmod +x gradlew
 
-    - name: Build
+    - name: Build APK
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
-        ./gradlew assembleDebug --stacktrace
+        ./gradlew assembleRelease --stacktrace
 
-    - name: Upload
+    - name: Upload Full Featured APK
       uses: actions/upload-artifact@v4
       with:
-        name: android14-apk
+        name: sage-predictor-full-features
 
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        path: android/app/build/outputs/apk/release/app-release.apk
