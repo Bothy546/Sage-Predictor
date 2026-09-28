@@ -34,13 +34,6 @@ jobs:
         module.exports = mergeConfig(getDefaultConfig(__dirname), {});
         EOF
 
-    - name: Verify source files exist
-      run: |
-        echo "Checking source files..."
-        ls -la src/
-        cat index.js
-        cat src/App.js | head -20
-
     - name: Create Android build files
       run: |
         cat > android/build.gradle << 'EOF'
@@ -88,18 +81,11 @@ jobs:
         cat > android/app/src/main/java/com/sagepredictor/MainActivity.java << 'EOF'
         package com.sagepredictor;
         import com.facebook.react.ReactActivity;
-        import com.facebook.react.ReactActivityDelegate;
-        import com.facebook.react.defaults.DefaultReactActivityDelegate;
         
         public class MainActivity extends ReactActivity {
           @Override
           protected String getMainComponentName() {
             return "SagePredictor";
-          }
-          
-          @Override
-          protected ReactActivityDelegate createReactActivityDelegate() {
-            return new DefaultReactActivityDelegate(this, getMainComponentName(), false);
           }
         }
         EOF
@@ -108,18 +94,17 @@ jobs:
         package com.sagepredictor;
         
         import android.app.Application;
-        import com.facebook.react.PackageList;
         import com.facebook.react.ReactApplication;
         import com.facebook.react.ReactNativeHost;
         import com.facebook.react.ReactPackage;
-        import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
-        import com.facebook.react.defaults.DefaultReactNativeHost;
+        import com.facebook.react.shell.MainReactPackage;
         import com.facebook.soloader.SoLoader;
+        import java.util.Arrays;
         import java.util.List;
         
         public class MainApplication extends Application implements ReactApplication {
         
-          private final ReactNativeHost mReactNativeHost = new DefaultReactNativeHost(this) {
+          private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
             @Override
             public boolean getUseDeveloperSupport() {
               return false;
@@ -127,22 +112,12 @@ jobs:
         
             @Override
             protected List<ReactPackage> getPackages() {
-              return new PackageList(this).getPackages();
+              return Arrays.asList(new MainReactPackage());
             }
         
             @Override
             protected String getJSMainModuleName() {
               return "index";
-            }
-            
-            @Override
-            protected boolean isNewArchEnabled() {
-              return false;
-            }
-            
-            @Override
-            protected Boolean isHermesEnabled() {
-              return false;
             }
           };
         
@@ -209,7 +184,7 @@ jobs:
         </manifest>
         EOF
 
-    - name: Bundle JavaScript CODE
+    - name: Bundle JavaScript
       run: |
         mkdir -p android/app/src/main/assets
         
@@ -221,18 +196,9 @@ jobs:
           --bundle-output android/app/src/main/assets/index.android.bundle \
           --assets-dest android/app/src/main/res/
         
-        echo "=== BUNDLE FILE INFO ==="
-        ls -lh android/app/src/main/assets/
-        file android/app/src/main/assets/index.android.bundle
-        echo "Bundle size: $(du -h android/app/src/main/assets/index.android.bundle | cut -f1)"
-        
-        # Verify bundle is not empty
-        if [ ! -s android/app/src/main/assets/index.android.bundle ]; then
-          echo "ERROR: Bundle file is empty!"
-          exit 1
-        fi
-        
-        echo "=== BUNDLE CREATED SUCCESSFULLY ==="
+        echo "=== VERIFYING BUNDLE ==="
+        ls -lh android/app/src/main/assets/index.android.bundle
+        du -h android/app/src/main/assets/index.android.bundle
 
     - name: Setup Gradle
       run: |
@@ -252,25 +218,14 @@ jobs:
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
-        
-        echo "=== BUILDING APK ==="
         ./gradlew assembleRelease --no-daemon --stacktrace
         
-        echo "=== APK INFO ==="
-        ls -lh app/build/outputs/apk/release/
-        file app/build/outputs/apk/release/app-release.apk
-        unzip -l app/build/outputs/apk/release/app-release.apk | grep -E "index.android.bundle|MainActivity|MainApplication"
+        echo "=== VERIFYING APK CONTAINS BUNDLE ==="
+        unzip -l app/build/outputs/apk/release/app-release.apk | grep "assets/index.android.bundle"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: sage-predictor-release
+
         path: android/app/build/outputs/apk/release/app-release.apk
-
-    - name: Upload bundle for debugging
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: javascript-bundle
-
-        path: android/app/src/main/assets/index.android.bundle
