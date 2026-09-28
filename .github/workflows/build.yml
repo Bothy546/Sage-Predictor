@@ -1,4 +1,4 @@
-name: Build Working APK
+name: Minimum APK
 
 on:
   push:
@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v4
 
-    - name: Set up JDK 17
+    - name: Setup JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    - name: Setup Node.js
+    - name: Setup Node
       uses: actions/setup-node@v4
       with:
         node-version: '18'
@@ -27,306 +27,16 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Create WORKING App.js (No crashes)
+    - name: Create ABSOLUTE MINIMUM App
       run: |
-        # Backup original
-        mv src/App.js src/App.original.backup.js 2>/dev/null || true
+        cat > src/App.js << 'EOF'
+        import React from 'react';
+        import { Text } from 'react-native';
         
-        # Create safe working version
-        cat > src/App.js << 'ENDAPP'
-        import React, { useState } from 'react';
-        import {
-          View,
-          Text,
-          ScrollView,
-          TouchableOpacity,
-          TextInput,
-          StyleSheet,
-          SafeAreaView,
-        } from 'react-native';
-        
-        const App = () => {
-          const [screen, setScreen] = useState('HOME');
-          const [apiKey, setApiKey] = useState('');
-          
-          const HomeScreen = () => (
-            <ScrollView style={styles.container}>
-              <Text style={styles.title}>🧙 Sage Predictor</Text>
-              <Text style={styles.tagline}>Wise Betting, Smart Profits</Text>
-              
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>✅ App is Working!</Text>
-                <Text style={styles.cardText}>• APK built successfully</Text>
-                <Text style={styles.cardText}>• React Native running</Text>
-                <Text style={styles.cardText}>• All screens functional</Text>
-                <Text style={styles.cardText}>• Ready for predictions</Text>
-              </View>
-              
-              <View style={styles.infoBox}>
-                <Text style={styles.infoTitle}>📋 Next Steps:</Text>
-                <Text style={styles.infoText}>1. Go to SETTINGS</Text>
-                <Text style={styles.infoText}>2. Enter your API key</Text>
-                <Text style={styles.infoText}>3. Return to HOME</Text>
-                <Text style={styles.infoText}>4. View predictions</Text>
-              </View>
-              
-              {apiKey ? (
-                <View style={styles.successBox}>
-                  <Text style={styles.successText}>✓ API Key Saved!</Text>
-                  <Text style={styles.successSubtext}>Predictions will load here</Text>
-                </View>
-              ) : (
-                <View style={styles.warningBox}>
-                  <Text style={styles.warningText}>⚠ No API Key Set</Text>
-                  <Text style={styles.warningSubtext}>Go to Settings to add your key</Text>
-                </View>
-              )}
-            </ScrollView>
-          );
-          
-          const DetailsScreen = () => (
-            <ScrollView style={styles.container}>
-              <Text style={styles.title}>Match Details</Text>
-              <View style={styles.card}>
-                <Text style={styles.cardTitle}>📊 Analysis</Text>
-                <Text style={styles.cardText}>Select a match from HOME to view detailed predictions</Text>
-              </View>
-            </ScrollView>
-          );
-          
-          const SettingsScreen = () => (
-            <ScrollView style={styles.container}>
-              <Text style={styles.title}>⚙️ Settings</Text>
-              
-              <View style={styles.settingsCard}>
-                <Text style={styles.settingsLabel}>Football-Data.org API Key:</Text>
-                <TextInput
-                  style={styles.input}
-                  value={apiKey}
-                  onChangeText={setApiKey}
-                  placeholder="Enter your API key"
-                  placeholderTextColor="#666"
-                />
-                
-                <TouchableOpacity 
-                  style={styles.saveButton}
-                  onPress={() => {
-                    if (apiKey) {
-                      setScreen('HOME');
-                    }
-                  }}
-                >
-                  <Text style={styles.saveButtonText}>💾 Save & Return to Home</Text>
-                </TouchableOpacity>
-                
-                <View style={styles.infoBox}>
-                  <Text style={styles.infoTitle}>ℹ️ Get Your Free API Key:</Text>
-                  <Text style={styles.infoText}>1. Visit: football-data.org</Text>
-                  <Text style={styles.infoText}>2. Click "Register"</Text>
-                  <Text style={styles.infoText}>3. Copy your API key</Text>
-                  <Text style={styles.infoText}>4. Paste it above</Text>
-                </View>
-              </View>
-            </ScrollView>
-          );
-          
-          return (
-            <SafeAreaView style={styles.app}>
-              <View style={styles.nav}>
-                <TouchableOpacity
-                  style={[styles.navButton, screen === 'HOME' && styles.navButtonActive]}
-                  onPress={() => setScreen('HOME')}
-                >
-                  <Text style={[styles.navText, screen === 'HOME' && styles.navTextActive]}>
-                    HOME
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.navButton, screen === 'DETAIL' && styles.navButtonActive]}
-                  onPress={() => setScreen('DETAIL')}
-                >
-                  <Text style={[styles.navText, screen === 'DETAIL' && styles.navTextActive]}>
-                    DETAILS
-                  </Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.navButton, screen === 'SETTINGS' && styles.navButtonActive]}
-                  onPress={() => setScreen('SETTINGS')}
-                >
-                  <Text style={[styles.navText, screen === 'SETTINGS' && styles.navTextActive]}>
-                    SETTINGS
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              {screen === 'HOME' && <HomeScreen />}
-              {screen === 'DETAIL' && <DetailsScreen />}
-              {screen === 'SETTINGS' && <SettingsScreen />}
-            </SafeAreaView>
-          );
-        };
-        
-        const styles = StyleSheet.create({
-          app: {
-            flex: 1,
-            backgroundColor: '#0a0a0a',
-          },
-          nav: {
-            flexDirection: 'row',
-            backgroundColor: '#1a1a1a',
-            paddingVertical: 12,
-            borderBottomWidth: 2,
-            borderBottomColor: '#2a2a2a',
-          },
-          navButton: {
-            flex: 1,
-            paddingVertical: 12,
-            alignItems: 'center',
-            borderBottomWidth: 3,
-            borderBottomColor: 'transparent',
-          },
-          navButtonActive: {
-            borderBottomColor: '#4CAF50',
-          },
-          navText: {
-            color: '#666',
-            fontSize: 13,
-            fontWeight: 'bold',
-          },
-          navTextActive: {
-            color: '#4CAF50',
-          },
-          container: {
-            flex: 1,
-            padding: 20,
-          },
-          title: {
-            fontSize: 32,
-            fontWeight: 'bold',
-            color: '#4CAF50',
-            textAlign: 'center',
-            marginBottom: 8,
-          },
-          tagline: {
-            fontSize: 14,
-            color: '#888',
-            textAlign: 'center',
-            marginBottom: 30,
-            fontStyle: 'italic',
-          },
-          card: {
-            backgroundColor: '#1a1a1a',
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-            borderLeftWidth: 4,
-            borderLeftColor: '#4CAF50',
-          },
-          cardTitle: {
-            fontSize: 18,
-            color: '#4CAF50',
-            fontWeight: 'bold',
-            marginBottom: 12,
-          },
-          cardText: {
-            fontSize: 14,
-            color: '#ccc',
-            marginBottom: 8,
-          },
-          infoBox: {
-            backgroundColor: '#1a1a1a',
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-            borderLeftWidth: 4,
-            borderLeftColor: '#2196F3',
-          },
-          infoTitle: {
-            fontSize: 16,
-            color: '#2196F3',
-            fontWeight: 'bold',
-            marginBottom: 12,
-          },
-          infoText: {
-            fontSize: 13,
-            color: '#aaa',
-            marginBottom: 6,
-          },
-          successBox: {
-            backgroundColor: '#1a3a1a',
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-            borderLeftWidth: 4,
-            borderLeftColor: '#4CAF50',
-          },
-          successText: {
-            fontSize: 16,
-            color: '#4CAF50',
-            fontWeight: 'bold',
-            marginBottom: 8,
-          },
-          successSubtext: {
-            fontSize: 13,
-            color: '#8BC34A',
-          },
-          warningBox: {
-            backgroundColor: '#3a2a1a',
-            borderRadius: 12,
-            padding: 20,
-            marginBottom: 20,
-            borderLeftWidth: 4,
-            borderLeftColor: '#FFC107',
-          },
-          warningText: {
-            fontSize: 16,
-            color: '#FFC107',
-            fontWeight: 'bold',
-            marginBottom: 8,
-          },
-          warningSubtext: {
-            fontSize: 13,
-            color: '#FFD54F',
-          },
-          settingsCard: {
-            backgroundColor: '#1a1a1a',
-            borderRadius: 12,
-            padding: 20,
-          },
-          settingsLabel: {
-            fontSize: 14,
-            color: '#ccc',
-            fontWeight: 'bold',
-            marginBottom: 10,
-          },
-          input: {
-            backgroundColor: '#0a0a0a',
-            color: '#fff',
-            padding: 15,
-            borderRadius: 8,
-            fontSize: 14,
-            marginBottom: 20,
-            borderWidth: 1,
-            borderColor: '#333',
-          },
-          saveButton: {
-            backgroundColor: '#4CAF50',
-            padding: 16,
-            borderRadius: 8,
-            marginBottom: 20,
-          },
-          saveButtonText: {
-            color: '#fff',
-            textAlign: 'center',
-            fontSize: 15,
-            fontWeight: 'bold',
-          },
-        });
-        
-        export default App;
-        ENDAPP
+        export default function App() {
+          return React.createElement(Text, null, 'WORKS');
+        }
+        EOF
 
     - name: Create Metro config
       run: |
@@ -335,7 +45,7 @@ jobs:
         module.exports = mergeConfig(getDefaultConfig(__dirname), {});
         EOF
 
-    - name: Create Android build files
+    - name: Android files
       run: |
         cat > android/build.gradle << 'EOF'
         buildscript {
@@ -353,7 +63,6 @@ jobs:
                 classpath('com.android.tools.build:gradle:7.4.2')
             }
         }
-        
         allprojects {
             repositories {
                 google()
@@ -375,14 +84,13 @@ jobs:
         android.enableJetifier=true
         EOF
 
-    - name: Create Java files
+    - name: Java files
       run: |
         mkdir -p android/app/src/main/java/com/sagepredictor
         
         cat > android/app/src/main/java/com/sagepredictor/MainActivity.java << 'EOF'
         package com.sagepredictor;
         import com.facebook.react.ReactActivity;
-        
         public class MainActivity extends ReactActivity {
           @Override
           protected String getMainComponentName() {
@@ -393,7 +101,6 @@ jobs:
         
         cat > android/app/src/main/java/com/sagepredictor/MainApplication.java << 'EOF'
         package com.sagepredictor;
-        
         import android.app.Application;
         import com.facebook.react.ReactApplication;
         import com.facebook.react.ReactNativeHost;
@@ -407,19 +114,15 @@ jobs:
           private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
             @Override
             public boolean getUseDeveloperSupport() { return false; }
-            
             @Override
             protected List<ReactPackage> getPackages() {
               return Arrays.asList(new MainReactPackage());
             }
-            
             @Override
             protected String getJSMainModuleName() { return "index"; }
           };
-          
           @Override
           public ReactNativeHost getReactNativeHost() { return mReactNativeHost; }
-          
           @Override
           public void onCreate() {
             super.onCreate();
@@ -428,40 +131,23 @@ jobs:
         }
         EOF
 
-    - name: Create icons
+    - name: Icons
       run: |
-        mkdir -p android/app/src/main/res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}
+        mkdir -p android/app/src/main/res/mipmap-mdpi
         sudo apt-get update -qq && sudo apt-get install -y imagemagick
-        convert -size 512x512 xc:#4CAF50 -pointsize 400 -fill white -gravity center -annotate +0+0 "S" /tmp/ic.png
-        
-        for size in 48:mdpi 72:hdpi 96:xhdpi 144:xxhdpi 192:xxxhdpi; do
-          px="${size%:*}"; dpi="${size#*:}"
-          convert /tmp/ic.png -resize ${px}x${px} android/app/src/main/res/mipmap-${dpi}/ic_launcher.png
-          cp android/app/src/main/res/mipmap-${dpi}/ic_launcher.png android/app/src/main/res/mipmap-${dpi}/ic_launcher_round.png
-        done
+        convert -size 48x48 xc:#4CAF50 android/app/src/main/res/mipmap-mdpi/ic_launcher.png
+        cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
 
-    - name: Create resources
+    - name: Manifest
       run: |
         mkdir -p android/app/src/main/res/values
-        cat > android/app/src/main/res/values/strings.xml << 'EOF'
-        <resources><string name="app_name">Sage Predictor</string></resources>
-        EOF
+        echo '<resources><string name="app_name">Sage</string></resources>' > android/app/src/main/res/values/strings.xml
         
         cat > android/app/src/main/AndroidManifest.xml << 'EOF'
-        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android" package="com.sagepredictor">
             <uses-permission android:name="android.permission.INTERNET" />
-            <application
-              android:name=".MainApplication"
-              android:label="@string/app_name"
-              android:icon="@mipmap/ic_launcher"
-              android:roundIcon="@mipmap/ic_launcher_round"
-              android:theme="@android:style/Theme.DeviceDefault.Light.NoActionBar"
-              android:usesCleartextTraffic="true">
-              <activity
-                android:name=".MainActivity"
-                android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
-                android:windowSoftInputMode="adjustResize"
-                android:exported="true">
+            <application android:name=".MainApplication" android:label="@string/app_name" android:icon="@mipmap/ic_launcher">
+              <activity android:name=".MainActivity" android:exported="true">
                 <intent-filter>
                     <action android:name="android.intent.action.MAIN" />
                     <category android:name="android.intent.category.LAUNCHER" />
@@ -471,30 +157,24 @@ jobs:
         </manifest>
         EOF
 
-    - name: Bundle JavaScript
+    - name: Bundle
       run: |
         mkdir -p android/app/src/main/assets
         npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/
-        ls -lh android/app/src/main/assets/index.android.bundle
 
-    - name: Setup Gradle
+    - name: Gradle
       run: |
         cd /tmp && wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip && unzip -q gradle-7.6.4-bin.zip
         cd $GITHUB_WORKSPACE/android && /tmp/gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4 && chmod +x gradlew
 
-    - name: Create keystore
-      run: |
-        cd android/app
-        keytool -genkeypair -v -keystore release.keystore -alias sage-key -keyalg RSA -keysize 2048 -validity 10000 -storepass sage2024 -keypass sage2024 -dname "CN=Sage"
-
-    - name: Build APK
+    - name: Build
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-        cd android && ./gradlew assembleRelease --no-daemon
+        cd android && ./gradlew assembleDebug --stacktrace
 
-    - name: Upload APK
+    - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: sage-predictor-working
+        name: debug-apk
 
-        path: android/app/build/outputs/apk/release/app-release.apk
+        path: android/app/build/outputs/apk/debug/app-debug.apk
