@@ -1,4 +1,4 @@
-name: Sage Predictor with Test Mode
+name: Sage Predictor - PRODUCTION
 
 on:
   push:
@@ -27,307 +27,20 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Add TEST MODE with mock matches
+    - name: Configure for PRODUCTION - Free Tier Leagues
       run: |
-        cat > src/App.test.js << 'TESTEOF'
-        import React, { useState } from 'react';
-        import {
-          View, Text, ScrollView, TouchableOpacity, TextInput, FlatList, StyleSheet, SafeAreaView
-        } from 'react-native';
+        echo "=== PRODUCTION MODE - REAL BETTING DATA ==="
         
-        const App = () => {
-          const [screen, setScreen] = useState('HOME');
-          const [apiKey, setApiKey] = useState('');
-          const [selectedMatch, setSelectedMatch] = useState(null);
-          
-          // MOCK MATCHES FOR TESTING
-          const mockMatches = [
-            {
-              id: 1,
-              homeTeam: 'Manchester City',
-              awayTeam: 'Liverpool',
-              league: 'Premier League',
-              time: new Date().toLocaleString(),
-              predictions: {
-                safetyScore: 75, confidenceEmoji: '🔥',
-                fullTime: { homeWin: 55, draw: 25, awayWin: 20 },
-                doubleChance: { dc1X: 80, dc12: 75, dcX2: 45 },
-                overUnder: { over05: 95, over15: 85, over25: 65, over35: 45, over45: 25 },
-                btts: { yes: 65, no: 35 },
-                firstHalf: { home: 40, draw: 45, away: 15 },
-                correctScores: [
-                  { score: '2-1', probability: 20 },
-                  { score: '1-1', probability: 18 },
-                  { score: '2-0', probability: 15 },
-                  { score: '1-0', probability: 12 },
-                  { score: '3-1', probability: 10 }
-                ],
-                teamGoals: { homeOver15: 70, awayOver15: 65 },
-                expectedGoals: { home: '1.8', away: '1.5' },
-                topBets: [
-                  { market: 'Home Win', probability: 55 },
-                  { market: 'Over 1.5', probability: 85 },
-                  { market: 'BTTS Yes', probability: 65 }
-                ]
-              }
-            },
-            {
-              id: 2,
-              homeTeam: 'Arsenal',
-              awayTeam: 'Chelsea',
-              league: 'Premier League',
-              time: new Date(Date.now() + 86400000).toLocaleString(),
-              predictions: {
-                safetyScore: 68, confidenceEmoji: '⚡',
-                fullTime: { homeWin: 50, draw: 30, awayWin: 20 },
-                doubleChance: { dc1X: 80, dc12: 70, dcX2: 50 },
-                overUnder: { over05: 90, over15: 75, over25: 55, over35: 35, over45: 20 },
-                btts: { yes: 60, no: 40 },
-                firstHalf: { home: 35, draw: 50, away: 15 },
-                correctScores: [
-                  { score: '1-1', probability: 22 },
-                  { score: '2-1', probability: 18 },
-                  { score: '1-0', probability: 15 }
-                ],
-                teamGoals: { homeOver15: 65, awayOver15: 60 },
-                expectedGoals: { home: '1.6', away: '1.3' },
-                topBets: [
-                  { market: '1X (Home/Draw)', probability: 80 },
-                  { market: 'Over 1.5', probability: 75 },
-                  { market: 'BTTS Yes', probability: 60 }
-                ]
-              }
-            },
-            {
-              id: 3,
-              homeTeam: 'Real Madrid',
-              awayTeam: 'Barcelona',
-              league: 'Test League',
-              time: new Date(Date.now() + 172800000).toLocaleString(),
-              predictions: {
-                safetyScore: 82, confidenceEmoji: '🔥',
-                fullTime: { homeWin: 48, draw: 27, awayWin: 25 },
-                doubleChance: { dc1X: 75, dc12: 73, dcX2: 52 },
-                overUnder: { over05: 92, over15: 82, over25: 68, over35: 48, over45: 28 },
-                btts: { yes: 70, no: 30 },
-                firstHalf: { home: 32, draw: 48, away: 20 },
-                correctScores: [
-                  { score: '2-2', probability: 18 },
-                  { score: '2-1', probability: 16 },
-                  { score: '1-1', probability: 15 }
-                ],
-                teamGoals: { homeOver15: 72, awayOver15: 68 },
-                expectedGoals: { home: '1.9', away: '1.7' },
-                topBets: [
-                  { market: 'Over 2.5', probability: 68 },
-                  { market: 'BTTS Yes', probability: 70 },
-                  { market: 'Home Win', probability: 48 }
-                ]
-              }
-            }
-          ];
-          
-          const renderHomeScreen = () => (
-            <View style={styles.container}>
-              <Text style={styles.title}>🧙 Sage Predictor</Text>
-              <Text style={styles.tagline}>Wise Betting, Smart Profits</Text>
-              <Text style={styles.testMode}>🧪 TEST MODE - Mock Data</Text>
-              
-              <FlatList
-                data={mockMatches}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    style={styles.matchCard}
-                    onPress={() => {
-                      setSelectedMatch(item);
-                      setScreen('DETAIL');
-                    }}
-                  >
-                    <View style={styles.matchHeader}>
-                      <Text style={styles.league}>{item.league}</Text>
-                      <Text style={styles.confidence}>{item.predictions.confidenceEmoji} {item.predictions.safetyScore}%</Text>
-                    </View>
-                    
-                    <View style={styles.teams}>
-                      <Text style={styles.teamName}>{item.homeTeam}</Text>
-                      <Text style={styles.vs}>vs</Text>
-                      <Text style={styles.teamName}>{item.awayTeam}</Text>
-                    </View>
-                    
-                    <Text style={styles.time}>{item.time}</Text>
-                    
-                    <View style={styles.topBets}>
-                      <Text style={styles.topBetsTitle}>TOP BETS:</Text>
-                      {item.predictions.topBets.map((bet, index) => (
-                        <Text key={index} style={styles.bet}>
-                          ✓ {bet.market}: {bet.probability}%
-                        </Text>
-                      ))}
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            </View>
-          );
-          
-          const renderDetailScreen = () => {
-            if (!selectedMatch) return null;
-            const p = selectedMatch.predictions;
-            
-            return (
-              <ScrollView style={styles.container}>
-                <Text style={styles.title}>Match Analysis</Text>
-                
-                <View style={styles.detailCard}>
-                  <Text style={styles.detailLeague}>{selectedMatch.league}</Text>
-                  <Text style={styles.detailTeamName}>{selectedMatch.homeTeam}</Text>
-                  <Text style={styles.detailVs}>vs</Text>
-                  <Text style={styles.detailTeamName}>{selectedMatch.awayTeam}</Text>
-                  <Text style={styles.detailTime}>{selectedMatch.time}</Text>
-                  <Text style={styles.safetyScore}>Safety: {p.safetyScore}% {p.confidenceEmoji}</Text>
-                </View>
-                
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>📊 FULL TIME</Text>
-                  <Text style={styles.marketItem}>Home: {p.fullTime.homeWin}%</Text>
-                  <Text style={styles.marketItem}>Draw: {p.fullTime.draw}%</Text>
-                  <Text style={styles.marketItem}>Away: {p.fullTime.awayWin}%</Text>
-                </View>
-                
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>🎯 DOUBLE CHANCE</Text>
-                  <Text style={styles.marketItem}>1X: {p.doubleChance.dc1X}%</Text>
-                  <Text style={styles.marketItem}>12: {p.doubleChance.dc12}%</Text>
-                  <Text style={styles.marketItem}>X2: {p.doubleChance.dcX2}%</Text>
-                </View>
-                
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>⚽ OVER/UNDER</Text>
-                  <Text style={styles.marketItem}>Over 1.5: {p.overUnder.over15}%</Text>
-                  <Text style={styles.marketItem}>Over 2.5: {p.overUnder.over25}%</Text>
-                  <Text style={styles.marketItem}>Over 3.5: {p.overUnder.over35}%</Text>
-                </View>
-                
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>🔥 BTTS</Text>
-                  <Text style={styles.marketItem}>Yes: {p.btts.yes}%</Text>
-                  <Text style={styles.marketItem}>No: {p.btts.no}%</Text>
-                </View>
-                
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>🎲 CORRECT SCORE</Text>
-                  {p.correctScores.map((cs, i) => (
-                    <Text key={i} style={styles.marketItem}>{cs.score}: {cs.probability}%</Text>
-                  ))}
-                </View>
-                
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>🎯 EXPECTED GOALS</Text>
-                  <Text style={styles.marketItem}>Home xG: {p.expectedGoals.home}</Text>
-                  <Text style={styles.marketItem}>Away xG: {p.expectedGoals.away}</Text>
-                </View>
-              </ScrollView>
-            );
-          };
-          
-          const renderSettingsScreen = () => (
-            <View style={styles.container}>
-              <Text style={styles.title}>⚙️ Settings</Text>
-              <View style={styles.settingsCard}>
-                <Text style={styles.settingsLabel}>API Key:</Text>
-                <TextInput
-                  style={styles.input}
-                  value={apiKey}
-                  onChangeText={setApiKey}
-                  placeholder="Enter API key"
-                  placeholderTextColor="#666"
-                />
-                <Text style={styles.infoText}>
-                  🧪 Currently in TEST MODE{'\n'}
-                  Showing mock matches for testing{'\n\n'}
-                  Get real API key from:{'\n'}
-                  football-data.org
-                </Text>
-              </View>
-            </View>
-          );
-          
-          return (
-            <SafeAreaView style={styles.app}>
-              <View style={styles.nav}>
-                <TouchableOpacity
-                  style={[styles.navButton, screen === 'HOME' && styles.navButtonActive]}
-                  onPress={() => setScreen('HOME')}
-                >
-                  <Text style={[styles.navText, screen === 'HOME' && styles.navTextActive]}>HOME</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.navButton, screen === 'DETAIL' && styles.navButtonActive]}
-                  onPress={() => setScreen('DETAIL')}
-                >
-                  <Text style={[styles.navText, screen === 'DETAIL' && styles.navTextActive]}>DETAILS</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={[styles.navButton, screen === 'SETTINGS' && styles.navButtonActive]}
-                  onPress={() => setScreen('SETTINGS')}
-                >
-                  <Text style={[styles.navText, screen === 'SETTINGS' && styles.navTextActive]}>SETTINGS</Text>
-                </TouchableOpacity>
-              </View>
-              
-              {screen === 'HOME' && renderHomeScreen()}
-              {screen === 'DETAIL' && renderDetailScreen()}
-              {screen === 'SETTINGS' && renderSettingsScreen()}
-            </SafeAreaView>
-          );
-        };
+        # Use only FREE tier leagues (PL, ELC)
+        sed -i 's/const leagueCodes = Object.keys(LEAGUES);/const leagueCodes = ["PL", "ELC"]; \/\/ Free tier: Premier League & Championship/' src/App.js
         
-        const styles = StyleSheet.create({
-          app: { flex: 1, backgroundColor: '#0a0a0a' },
-          nav: { flexDirection: 'row', backgroundColor: '#1a1a1a', paddingVertical: 12, borderBottomWidth: 2, borderBottomColor: '#2a2a2a' },
-          navButton: { flex: 1, paddingVertical: 12, alignItems: 'center', borderBottomWidth: 3, borderBottomColor: 'transparent' },
-          navButtonActive: { borderBottomColor: '#4CAF50' },
-          navText: { color: '#666', fontSize: 13, fontWeight: 'bold' },
-          navTextActive: { color: '#4CAF50' },
-          container: { flex: 1, padding: 20 },
-          title: { fontSize: 32, fontWeight: 'bold', color: '#4CAF50', textAlign: 'center', marginBottom: 8 },
-          tagline: { fontSize: 14, color: '#888', textAlign: 'center', marginBottom: 10, fontStyle: 'italic' },
-          testMode: { fontSize: 12, color: '#FFC107', textAlign: 'center', marginBottom: 20, fontWeight: 'bold' },
-          matchCard: { backgroundColor: '#1a1a1a', borderRadius: 12, padding: 15, marginBottom: 15, borderLeftWidth: 4, borderLeftColor: '#4CAF50' },
-          matchHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-          league: { color: '#4CAF50', fontSize: 12, fontWeight: 'bold' },
-          confidence: { color: '#FFC107', fontSize: 12, fontWeight: 'bold' },
-          teams: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
-          teamName: { color: '#fff', fontSize: 14, fontWeight: 'bold', flex: 1 },
-          vs: { color: '#888', fontSize: 12, marginHorizontal: 8 },
-          time: { color: '#888', fontSize: 11, marginBottom: 10 },
-          topBets: { backgroundColor: '#0a0a0a', padding: 10, borderRadius: 5 },
-          topBetsTitle: { color: '#4CAF50', fontSize: 11, fontWeight: 'bold', marginBottom: 5 },
-          bet: { color: '#fff', fontSize: 11, marginBottom: 3 },
-          detailCard: { backgroundColor: '#1a1a1a', padding: 20, borderRadius: 12, marginBottom: 20, alignItems: 'center' },
-          detailLeague: { color: '#4CAF50', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-          detailTeamName: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginVertical: 2 },
-          detailVs: { color: '#888', fontSize: 14, marginVertical: 5 },
-          detailTime: { color: '#888', fontSize: 12, marginBottom: 10 },
-          safetyScore: { color: '#FFC107', fontSize: 16, fontWeight: 'bold' },
-          section: { backgroundColor: '#1a1a1a', padding: 15, borderRadius: 8, marginBottom: 15 },
-          sectionTitle: { color: '#4CAF50', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-          marketItem: { color: '#fff', fontSize: 13, marginBottom: 5, paddingLeft: 10 },
-          settingsCard: { backgroundColor: '#1a1a1a', padding: 20, borderRadius: 12 },
-          settingsLabel: { color: '#ccc', fontSize: 14, fontWeight: 'bold', marginBottom: 10 },
-          input: { backgroundColor: '#0a0a0a', color: '#fff', padding: 15, borderRadius: 8, fontSize: 14, marginBottom: 20, borderWidth: 1, borderColor: '#333' },
-          infoText: { color: '#888', fontSize: 12, lineHeight: 18 },
-        });
+        # Lower safety filter to 30% (show more betting opportunities)
+        sed -i 's/safetyScore >= 60/safetyScore >= 30/' src/App.js
         
-        export default App;
-        TESTEOF
+        # Update empty message to be more helpful
+        sed -i "s/No matches found for next 7 days/No high-confidence matches in next 7 days. Check back during match weeks!/" src/App.js
         
-        # Use test version
-        mv src/App.js src/App.original.js
-        mv src/App.test.js src/App.js
+        echo "=== PRODUCTION CONFIG COMPLETE ==="
 
     - name: Create Metro config
       run: |
@@ -371,9 +84,12 @@ jobs:
         EOF
         
         cat > android/gradle.properties << 'EOF'
-        org.gradle.jvmargs=-Xmx4096m
+        org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m
         android.useAndroidX=true
         android.enableJetifier=true
+        android.defaults.buildfeatures.buildconfig=true
+        android.nonTransitiveRClass=false
+        android.nonFinalResIds=false
         EOF
 
     - name: Create app/build.gradle
@@ -384,36 +100,50 @@ jobs:
         android {
             namespace "com.sagepredictor"
             compileSdkVersion 34
+            buildToolsVersion "34.0.0"
+            
             defaultConfig {
                 applicationId "com.sagepredictor"
                 minSdkVersion 24
                 targetSdkVersion 34
                 versionCode 1
-                versionName "1.0-TEST"
+                versionName "1.0.0"
             }
+            
             signingConfigs {
-                debug {
-                    storeFile file('debug.keystore')
-                    storePassword 'android'
-                    keyAlias 'androiddebugkey'
-                    keyPassword 'android'
+                release {
+                    storeFile file('release.keystore')
+                    storePassword 'sage2024'
+                    keyAlias 'sage-key'
+                    keyPassword 'sage2024'
                 }
             }
+            
             buildTypes {
                 release {
-                    signingConfig signingConfigs.debug
+                    signingConfig signingConfigs.release
                     minifyEnabled false
                 }
             }
+            
             compileOptions {
                 sourceCompatibility JavaVersion.VERSION_11
                 targetCompatibility JavaVersion.VERSION_11
             }
+            
+            packagingOptions {
+                pickFirst 'lib/x86/libc++_shared.so'
+                pickFirst 'lib/x86_64/libc++_shared.so'
+                pickFirst 'lib/armeabi-v7a/libc++_shared.so'
+                pickFirst 'lib/arm64-v8a/libc++_shared.so'
+            }
         }
         
         dependencies {
+            implementation fileTree(dir: "libs", include: ["*.jar"])
             implementation 'com.facebook.react:react-android:0.72.6'
             implementation 'androidx.appcompat:appcompat:1.6.1'
+            implementation 'androidx.swiperefreshlayout:swiperefreshlayout:1.1.0'
             implementation 'com.facebook.soloader:soloader:0.10.5'
             implementation 'org.webkit:android-jsc:+'
         }
@@ -426,14 +156,18 @@ jobs:
         cat > android/app/src/main/java/com/sagepredictor/MainActivity.java << 'EOF'
         package com.sagepredictor;
         import com.facebook.react.ReactActivity;
+        
         public class MainActivity extends ReactActivity {
           @Override
-          protected String getMainComponentName() { return "SagePredictor"; }
+          protected String getMainComponentName() {
+            return "SagePredictor";
+          }
         }
         EOF
         
         cat > android/app/src/main/java/com/sagepredictor/MainApplication.java << 'EOF'
         package com.sagepredictor;
+        
         import android.app.Application;
         import com.facebook.react.ReactApplication;
         import com.facebook.react.ReactNativeHost;
@@ -448,12 +182,16 @@ jobs:
             @Override
             public boolean getUseDeveloperSupport() { return false; }
             @Override
-            protected List<ReactPackage> getPackages() { return Arrays.asList(new MainReactPackage()); }
+            protected List<ReactPackage> getPackages() {
+              return Arrays.asList(new MainReactPackage());
+            }
             @Override
             protected String getJSMainModuleName() { return "index"; }
           };
+          
           @Override
           public ReactNativeHost getReactNativeHost() { return mReactNativeHost; }
+          
           @Override
           public void onCreate() {
             super.onCreate();
@@ -462,24 +200,32 @@ jobs:
         }
         EOF
 
-    - name: Create manifest & resources
+    - name: Create Android manifest
       run: |
         mkdir -p android/app/src/main/res/values
-        echo '<resources><string name="app_name">Sage TEST</string></resources>' > android/app/src/main/res/values/strings.xml
+        echo '<resources><string name="app_name">Sage Predictor</string></resources>' > android/app/src/main/res/values/strings.xml
         
         cat > android/app/src/main/AndroidManifest.xml << 'EOF'
         <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            
             <uses-permission android:name="android.permission.INTERNET" />
+            <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+            
             <application
                 android:name=".MainApplication"
                 android:label="@string/app_name"
                 android:icon="@mipmap/ic_launcher"
+                android:roundIcon="@mipmap/ic_launcher_round"
+                android:allowBackup="false"
                 android:theme="@style/Theme.AppCompat.Light.NoActionBar"
                 android:usesCleartextTraffic="true"
                 android:enableOnBackInvokedCallback="true">
+                
                 <activity
                     android:name=".MainActivity"
-                    android:configChanges="keyboard|keyboardHidden|orientation|screenSize"
+                    android:label="@string/app_name"
+                    android:configChanges="keyboard|keyboardHidden|orientation|screenSize|uiMode"
+                    android:launchMode="singleTask"
                     android:windowSoftInputMode="adjustResize"
                     android:exported="true">
                     <intent-filter>
@@ -491,36 +237,61 @@ jobs:
         </manifest>
         EOF
 
-    - name: Create icons
+    - name: Create professional app icons
       run: |
-        mkdir -p android/app/src/main/res/mipmap-mdpi
+        mkdir -p android/app/src/main/res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}
         sudo apt-get update -qq && sudo apt-get install -y imagemagick
-        convert -size 48x48 xc:#4CAF50 -pointsize 32 -fill white -gravity center -annotate +0+0 "S" android/app/src/main/res/mipmap-mdpi/ic_launcher.png
-        cp android/app/src/main/res/mipmap-mdpi/ic_launcher.png android/app/src/main/res/mipmap-mdpi/ic_launcher_round.png
+        
+        # Create professional circular icon with "S"
+        convert -size 512x512 xc:none -fill "#4CAF50" -draw "circle 256,256 256,50" -fill white -font DejaVu-Sans-Bold -pointsize 320 -gravity center -annotate +0+10 "S" /tmp/ic.png
+        
+        for size in 48:mdpi 72:hdpi 96:xhdpi 144:xxhdpi 192:xxxhdpi; do
+          px="${size%:*}"; dpi="${size#*:}"
+          convert /tmp/ic.png -resize ${px}x${px} android/app/src/main/res/mipmap-${dpi}/ic_launcher.png
+          cp android/app/src/main/res/mipmap-${dpi}/ic_launcher.png android/app/src/main/res/mipmap-${dpi}/ic_launcher_round.png
+        done
 
-    - name: Create keystore
+    - name: Create release keystore
       run: |
         cd android/app
-        keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Test"
+        keytool -genkeypair -v -keystore release.keystore -alias sage-key -keyalg RSA -keysize 2048 -validity 10000 -storepass sage2024 -keypass sage2024 -dname "CN=Sage Predictor,OU=Betting,O=Sage,C=UK"
 
-    - name: Bundle
+    - name: Bundle JavaScript
       run: |
         mkdir -p android/app/src/main/assets
-        npx react-native bundle --platform android --dev false --entry-file index.js --bundle-output android/app/src/main/assets/index.android.bundle --assets-dest android/app/src/main/res/
+        
+        echo "=== BUNDLING PRODUCTION APP ==="
+        npx react-native bundle \
+          --platform android \
+          --dev false \
+          --entry-file index.js \
+          --bundle-output android/app/src/main/assets/index.android.bundle \
+          --assets-dest android/app/src/main/res/
+        
+        echo "=== BUNDLE SIZE ==="
+        ls -lh android/app/src/main/assets/index.android.bundle
 
-    - name: Setup Gradle
+    - name: Setup Gradle 8.0
       run: |
-        cd /tmp && wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip && unzip -q gradle-8.0-bin.zip
-        cd $GITHUB_WORKSPACE/android && /tmp/gradle-8.0/bin/gradle wrapper --gradle-version=8.0 && chmod +x gradlew
+        cd /tmp
+        wget -q https://services.gradle.org/distributions/gradle-8.0-bin.zip
+        unzip -q gradle-8.0-bin.zip
+        cd $GITHUB_WORKSPACE/android
+        /tmp/gradle-8.0/bin/gradle wrapper --gradle-version=8.0
+        chmod +x gradlew
 
-    - name: Build
+    - name: Build PRODUCTION APK
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
-        cd android && ./gradlew assembleRelease
+        cd android
+        ./gradlew assembleRelease --stacktrace
+        
+        echo "=== PRODUCTION APK READY ==="
+        ls -lh app/build/outputs/apk/release/
 
-    - name: Upload
+    - name: Upload Production APK
       uses: actions/upload-artifact@v4
       with:
-        name: sage-predictor-test-mode
+        name: sage-predictor-PRODUCTION
 
         path: android/app/build/outputs/apk/release/app-release.apk
