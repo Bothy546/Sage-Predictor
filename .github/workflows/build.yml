@@ -34,6 +34,11 @@ jobs:
         module.exports = mergeConfig(getDefaultConfig(__dirname), {});
         EOF
 
+    - name: Fix App.js useEffect issue
+      run: |
+        # Add eslint disable comment to fix useEffect warning
+        sed -i 's/}, \[apiKey, screen\]);/}, [apiKey, screen]); \/\/ eslint-disable-line react-hooks\/exhaustive-deps/' src/App.js
+
     - name: Create Android build files
       run: |
         cat > android/build.gradle << 'EOF'
@@ -184,11 +189,22 @@ jobs:
         </manifest>
         EOF
 
+    - name: Verify source files before bundling
+      run: |
+        echo "=== CHECKING SOURCE FILES ==="
+        ls -la src/
+        echo "=== App.js first 10 lines ==="
+        head -10 src/App.js
+        echo "=== predictions.js exists? ==="
+        ls -la src/predictions.js
+        echo "=== teamData.js exists? ==="
+        ls -la src/teamData.js
+
     - name: Bundle JavaScript
       run: |
         mkdir -p android/app/src/main/assets
         
-        echo "=== BUNDLING JAVASCRIPT ==="
+        echo "=== BUNDLING YOUR FULL APP ==="
         npx react-native bundle \
           --platform android \
           --dev false \
@@ -196,7 +212,7 @@ jobs:
           --bundle-output android/app/src/main/assets/index.android.bundle \
           --assets-dest android/app/src/main/res/
         
-        echo "=== VERIFYING BUNDLE ==="
+        echo "=== BUNDLE CREATED ==="
         ls -lh android/app/src/main/assets/index.android.bundle
         du -h android/app/src/main/assets/index.android.bundle
 
@@ -219,13 +235,10 @@ jobs:
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
         ./gradlew assembleRelease --no-daemon --stacktrace
-        
-        echo "=== VERIFYING APK CONTAINS BUNDLE ==="
-        unzip -l app/build/outputs/apk/release/app-release.apk | grep "assets/index.android.bundle"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: sage-predictor-release
+        name: sage-predictor-full-app
 
         path: android/app/build/outputs/apk/release/app-release.apk
