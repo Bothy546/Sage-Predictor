@@ -31,20 +31,15 @@ jobs:
       run: |
         cat > metro.config.js << 'EOF'
         const {getDefaultConfig, mergeConfig} = require('@react-native/metro-config');
-        
-        const config = {
-          transformer: {
-            getTransformOptions: async () => ({
-              transform: {
-                experimentalImportSupport: false,
-                inlineRequires: true,
-              },
-            }),
-          },
-        };
-        
-        module.exports = mergeConfig(getDefaultConfig(__dirname), config);
+        module.exports = mergeConfig(getDefaultConfig(__dirname), {});
         EOF
+
+    - name: Verify source files exist
+      run: |
+        echo "Checking source files..."
+        ls -la src/
+        cat index.js
+        cat src/App.js | head -20
 
     - name: Create Android build files
       run: |
@@ -69,12 +64,8 @@ jobs:
             repositories {
                 google()
                 mavenCentral()
-                maven {
-                    url "$rootDir/../node_modules/react-native/android"
-                }
-                maven {
-                    url "$rootDir/../node_modules/jsc-android/dist"
-                }
+                maven { url "$rootDir/../node_modules/react-native/android" }
+                maven { url "$rootDir/../node_modules/jsc-android/dist" }
             }
         }
         EOF
@@ -96,13 +87,19 @@ jobs:
         
         cat > android/app/src/main/java/com/sagepredictor/MainActivity.java << 'EOF'
         package com.sagepredictor;
-        
         import com.facebook.react.ReactActivity;
+        import com.facebook.react.ReactActivityDelegate;
+        import com.facebook.react.defaults.DefaultReactActivityDelegate;
         
         public class MainActivity extends ReactActivity {
           @Override
           protected String getMainComponentName() {
             return "SagePredictor";
+          }
+          
+          @Override
+          protected ReactActivityDelegate createReactActivityDelegate() {
+            return new DefaultReactActivityDelegate(this, getMainComponentName(), false);
           }
         }
         EOF
@@ -111,17 +108,18 @@ jobs:
         package com.sagepredictor;
         
         import android.app.Application;
+        import com.facebook.react.PackageList;
         import com.facebook.react.ReactApplication;
         import com.facebook.react.ReactNativeHost;
         import com.facebook.react.ReactPackage;
-        import com.facebook.react.shell.MainReactPackage;
+        import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint;
+        import com.facebook.react.defaults.DefaultReactNativeHost;
         import com.facebook.soloader.SoLoader;
-        import java.util.Arrays;
         import java.util.List;
         
         public class MainApplication extends Application implements ReactApplication {
         
-          private final ReactNativeHost mReactNativeHost = new ReactNativeHost(this) {
+          private final ReactNativeHost mReactNativeHost = new DefaultReactNativeHost(this) {
             @Override
             public boolean getUseDeveloperSupport() {
               return false;
@@ -129,12 +127,22 @@ jobs:
         
             @Override
             protected List<ReactPackage> getPackages() {
-              return Arrays.asList(new MainReactPackage());
+              return new PackageList(this).getPackages();
             }
         
             @Override
             protected String getJSMainModuleName() {
               return "index";
+            }
+            
+            @Override
+            protected boolean isNewArchEnabled() {
+              return false;
+            }
+            
+            @Override
+            protected Boolean isHermesEnabled() {
+              return false;
             }
           };
         
@@ -154,15 +162,12 @@ jobs:
     - name: Create app icons
       run: |
         mkdir -p android/app/src/main/res/mipmap-{mdpi,hdpi,xhdpi,xxhdpi,xxxhdpi}
-        
         sudo apt-get update -qq
         sudo apt-get install -y imagemagick
-        
         convert -size 512x512 xc:#4CAF50 -pointsize 400 -fill white -gravity center -annotate +0+0 "S" /tmp/ic.png
         
         for size in 48:mdpi 72:hdpi 96:xhdpi 144:xxhdpi 192:xxxhdpi; do
-          px="${size%:*}"
-          dpi="${size#*:}"
+          px="${size%:*}"; dpi="${size#*:}"
           convert /tmp/ic.png -resize ${px}x${px} android/app/src/main/res/mipmap-${dpi}/ic_launcher.png
           cp android/app/src/main/res/mipmap-${dpi}/ic_launcher.png android/app/src/main/res/mipmap-${dpi}/ic_launcher_round.png
         done
@@ -191,7 +196,8 @@ jobs:
               <activity
                 android:name=".MainActivity"
                 android:label="@string/app_name"
-                android:configChanges="keyboard|keyboardHidden|orientation|screenLayout|screenSize"
+                android:configChanges="keyboard|keyboardHidden|orientation|screenSize|screenLayout|uiMode"
+                android:launchMode="singleTask"
                 android:windowSoftInputMode="adjustResize"
                 android:exported="true">
                 <intent-filter>
@@ -203,26 +209,36 @@ jobs:
         </manifest>
         EOF
 
-    - name: Bundle JavaScript
+    - name: Bundle JavaScript CODE
       run: |
         mkdir -p android/app/src/main/assets
         
+        echo "=== BUNDLING JAVASCRIPT ==="
         npx react-native bundle \
           --platform android \
           --dev false \
           --entry-file index.js \
           --bundle-output android/app/src/main/assets/index.android.bundle \
-          --assets-dest android/app/src/main/res/ \
-          --reset-cache
+          --assets-dest android/app/src/main/res/
+        
+        echo "=== BUNDLE FILE INFO ==="
+        ls -lh android/app/src/main/assets/
+        file android/app/src/main/assets/index.android.bundle
+        echo "Bundle size: $(du -h android/app/src/main/assets/index.android.bundle | cut -f1)"
+        
+        # Verify bundle is not empty
+        if [ ! -s android/app/src/main/assets/index.android.bundle ]; then
+          echo "ERROR: Bundle file is empty!"
+          exit 1
+        fi
+        
+        echo "=== BUNDLE CREATED SUCCESSFULLY ==="
 
-    - name: Setup Gradle 7.6.4
+    - name: Setup Gradle
       run: |
-        # Download to /tmp to avoid conflicts
         cd /tmp
         wget -q https://services.gradle.org/distributions/gradle-7.6.4-bin.zip
         unzip -q gradle-7.6.4-bin.zip
-        
-        # Generate wrapper in project using /tmp gradle
         cd $GITHUB_WORKSPACE/android
         /tmp/gradle-7.6.4/bin/gradle wrapper --gradle-version=7.6.4
         chmod +x gradlew
@@ -236,11 +252,25 @@ jobs:
       run: |
         echo "sdk.dir=$ANDROID_HOME" > android/local.properties
         cd android
+        
+        echo "=== BUILDING APK ==="
         ./gradlew assembleRelease --no-daemon --stacktrace
+        
+        echo "=== APK INFO ==="
+        ls -lh app/build/outputs/apk/release/
+        file app/build/outputs/apk/release/app-release.apk
+        unzip -l app/build/outputs/apk/release/app-release.apk | grep -E "index.android.bundle|MainActivity|MainApplication"
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: sage-predictor-release
-
         path: android/app/build/outputs/apk/release/app-release.apk
+
+    - name: Upload bundle for debugging
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: javascript-bundle
+
+        path: android/app/src/main/assets/index.android.bundle
