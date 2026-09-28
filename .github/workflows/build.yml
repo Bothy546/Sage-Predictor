@@ -27,13 +27,14 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Verify your source files exist
+    - name: Remove safety filter - Show ALL matches
       run: |
-        echo "=== CHECKING YOUR FILES ==="
-        ls -la src/
-        echo "App.js exists: $(test -f src/App.js && echo YES || echo NO)"
-        echo "predictions.js exists: $(test -f src/predictions.js && echo YES || echo NO)"
-        echo "teamData.js exists: $(test -f src/teamData.js && echo YES || echo NO)"
+        echo "=== REMOVING SAFETY FILTER ==="
+        # Change filter from >= 60 to >= 0 (shows ALL matches)
+        sed -i 's/safetyScore >= 60/safetyScore >= 0/g' src/App.js
+        
+        # Also add total count display
+        sed -i 's/Enter API key in Settings to view matches/Enter API key in Settings to view matches. Total fetched: {allMatches.length}/g' src/App.js
 
     - name: Create Metro config
       run: |
@@ -250,11 +251,11 @@ jobs:
         cd android/app
         keytool -genkeypair -v -keystore debug.keystore -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
 
-    - name: Bundle JavaScript with YOUR full app
+    - name: Bundle JavaScript
       run: |
         mkdir -p android/app/src/main/assets
         
-        echo "=== BUNDLING YOUR FULL APP (predictions, API, everything) ==="
+        echo "=== BUNDLING FULL APP WITH NO SAFETY FILTER ==="
         npx react-native bundle \
           --platform android \
           --dev false \
@@ -262,9 +263,8 @@ jobs:
           --bundle-output android/app/src/main/assets/index.android.bundle \
           --assets-dest android/app/src/main/res/
         
-        echo "=== BUNDLE SIZE ==="
+        echo "=== BUNDLE CREATED ==="
         ls -lh android/app/src/main/assets/index.android.bundle
-        du -h android/app/src/main/assets/index.android.bundle
 
     - name: Setup Gradle 8.0
       run: |
@@ -281,9 +281,9 @@ jobs:
         cd android
         ./gradlew assembleRelease --stacktrace
 
-    - name: Upload Full Featured APK
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: sage-predictor-full-features
+        name: sage-predictor-all-matches
 
         path: android/app/build/outputs/apk/release/app-release.apk
